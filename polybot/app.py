@@ -1,13 +1,25 @@
+import caching
 import flask
+import secretsmanager
 from flask import request
 import os
 from bot import ObjectDetectionBot
+# following lines added for the secret retrieval:
+import botocore
+import botocore.session
+from aws_secretsmanager_caching import SecretCache, SecretCacheConfig
+
+client = botocore.session.get_session().create_client('secretsmanager')
+cache_config = SecretCacheConfig()
+cache = SecretCache(config=cache_config, client=client)
+
+TELEGRAM_TOKEN = cache.get_secret_string('davidhei-telegram-token')
 
 app = flask.Flask(__name__)
 
 
 # TODO load TELEGRAM_TOKEN value from Secret Manager
-TELEGRAM_TOKEN = ...
+# TELEGRAM_TOKEN = ...
 
 TELEGRAM_APP_URL = os.environ['TELEGRAM_APP_URL']
 
