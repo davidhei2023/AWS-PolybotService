@@ -13,7 +13,8 @@ class Bot:
         self.telegram_bot_client = telebot.TeleBot(token)
         self.telegram_bot_client.remove_webhook()
         time.sleep(0.5)
-        self.telegram_bot_client.set_webhook(url=f'{telegram_chat_url}/{token}/', timeout=60)
+        webhook_url = f'{telegram_chat_url}/{token}/'
+        self.telegram_bot_client.set_webhook(url=webhook_url, timeout=60)
         logger.info(f'Telegram Bot information\n\n{self.telegram_bot_client.get_me()}')
 
     def send_text(self, chat_id, text):
@@ -40,6 +41,7 @@ class Bot:
             photo.write(data)
 
         return file_info.file_path
+
 
     def upload_to_s3(self, file_path, bucket_name, s3_file_name):
         s3 = boto3.client('s3')

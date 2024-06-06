@@ -1,11 +1,7 @@
-import caching
 import flask
-import secretsmanager
-from flask import request
 import os
+import json
 from bot import ObjectDetectionBot
-
-import botocore
 import botocore.session
 from aws_secretsmanager_caching import SecretCache, SecretCacheConfig
 
@@ -13,9 +9,13 @@ client = botocore.session.get_session().create_client('secretsmanager')
 cache_config = SecretCacheConfig()
 cache = SecretCache(config=cache_config, client=client)
 
-TELEGRAM_TOKEN = cache.get_secret_string('davidhei-telegram-token')
-TELEGRAM_APP_URL = os.environ['TELEGRAM_APP_URL']
+secret_string = cache.get_secret_string('davidhei-telegram-token')
+secret_json = json.loads(secret_string)
+TELEGRAM_TOKEN = secret_json["TELEGRAM_TOKEN"]
+TELEGRAM_APP_URL = os.environ.get('TELEGRAM_APP_URL')
 
+print(f"TELEGRAM_TOKEN: {TELEGRAM_TOKEN}")
+print(f"TELEGRAM_APP_URL: {TELEGRAM_APP_URL}")
 
 app = flask.Flask(__name__)
 
@@ -27,16 +27,16 @@ def index():
 
 @app.route(f'/{TELEGRAM_TOKEN}/', methods=['POST'])
 def webhook():
-    req = request.get_json()
+    req = flask.request.get_json()
     bot.handle_message(req['message'])
     return 'Ok'
 
 
 @app.route(f'/results', methods=['POST'])
 def results():
-    prediction_id = request.args.get('predictionId')
+    prediction_id = flask.request.args.get('predictionId')
 
-    # TODO use the prediction_id to retrieve results from DynamoDB and send to the end-user
+    # TODO: Retrieve results from DynamoDB using prediction_id
 
     chat_id = ...
     text_results = ...
@@ -47,12 +47,11 @@ def results():
 
 @app.route(f'/loadTest/', methods=['POST'])
 def load_test():
-    req = request.get_json()
+    req = flask.request.get_json()
     bot.handle_message(req['message'])
     return 'Ok'
 
 
 if __name__ == "__main__":
     bot = ObjectDetectionBot(TELEGRAM_TOKEN, TELEGRAM_APP_URL)
-
     app.run(host='0.0.0.0', port=8443)
