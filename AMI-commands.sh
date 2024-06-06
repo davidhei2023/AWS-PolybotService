@@ -22,4 +22,4 @@ sudo groupadd docker
 sudo usermod -aG docker $USER
 
 sleep 60
-docker run -d davidhei/aws-polybotservice:polybot
+docker run -d davidhei/aws-polybotservice:polybot-v0.1.0
