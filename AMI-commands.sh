@@ -18,8 +18,7 @@ apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docke
 
 systemctl enable docker
 systemctl start docker
-sudo groupadd docker
-sudo usermod -aG docker $USER
+groupadd docker
+usermod -aG docker $USER
 
-sleep 60
-docker run -d davidhei/aws-polybotservice:polybot-v0.1.0
+docker run -d --name polybot -p 8443:8443 -e aws_region=us-east-2 -e TELEGRAM_APP_URL=https://davidhei-polybot.int-devops.click davidhei/aws-polybotservice:polybot-v0.1.8

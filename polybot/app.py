@@ -1,11 +1,14 @@
 import flask
 import os
 import json
+import boto3
 from bot import ObjectDetectionBot
 import botocore.session
 from aws_secretsmanager_caching import SecretCache, SecretCacheConfig
 
-client = botocore.session.get_session().create_client('secretsmanager')
+aws_region = os.environ.get('AWS_REGION', 'us-east-2')
+
+client = botocore.session.get_session().create_client('secretsmanager', region_name=aws_region)
 cache_config = SecretCacheConfig()
 cache = SecretCache(config=cache_config, client=client)
 
@@ -14,10 +17,12 @@ secret_json = json.loads(secret_string)
 TELEGRAM_TOKEN = secret_json["TELEGRAM_TOKEN"]
 TELEGRAM_APP_URL = os.environ.get('TELEGRAM_APP_URL')
 
-print(f"TELEGRAM_TOKEN: {TELEGRAM_TOKEN}")
-print(f"TELEGRAM_APP_URL: {TELEGRAM_APP_URL}")
+print(f"Webhook URL: {TELEGRAM_APP_URL}")
 
 app = flask.Flask(__name__)
+
+dynamodb = boto3.resource('dynamodb', region_name=aws_region)
+table = dynamodb.Table(os.environ['DYNAMODB_TABLE_NAME'])
 
 
 @app.route('/', methods=['GET'])
@@ -36,13 +41,22 @@ def webhook():
 def results():
     prediction_id = flask.request.args.get('predictionId')
 
-    # TODO: Retrieve results from DynamoDB using prediction_id
+    # Retrieve results from DynamoDB using prediction_id
+    response = table.get_item(Key={'prediction_id': prediction_id})
+    if 'Item' in response:
+        item = response['Item']
+        chat_id = item['chat_id']
+        labels = item['labels']
 
-    chat_id = ...
-    text_results = ...
+        # Format text results
+        text_results = f"Prediction results for image {item['original_img_path']}:\n"
+        for label in labels:
+            text_results += f"- {label['class']} at ({label['cx']:.2f}, {label['cy']:.2f}) with size ({label['width']:.2f}, {label['height']:.2f})\n"
 
-    bot.send_text(chat_id, text_results)
-    return 'Ok'
+        bot.send_text(chat_id, text_results)
+        return 'Ok'
+    else:
+        return 'No results found', 404
 
 
 @app.route(f'/loadTest/', methods=['POST'])
