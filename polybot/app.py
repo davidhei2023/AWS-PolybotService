@@ -9,47 +9,25 @@ from bot import ObjectDetectionBot
 from aws_secretsmanager_caching import SecretCache, SecretCacheConfig
 import requests
 
-# AWS region
 aws_region = os.environ.get('AWS_REGION', 'us-east-2')
 
 client = botocore.session.get_session().create_client('secretsmanager', region_name=aws_region)
 cache_config = SecretCacheConfig()
 cache = SecretCache(config=cache_config, client=client)
 
-TELEGRAM_TOKEN = cache.get_secret_string('davidhei-telegram-token')
+TELEGRAM_TOKEN_SECRET = cache.get_secret_string('davidhei-telegram-token')
+TELEGRAM_TOKEN = json.loads(TELEGRAM_TOKEN_SECRET).get("TELEGRAM_TOKEN")
+if not TELEGRAM_TOKEN:
+    raise ValueError("The TELEGRAM_TOKEN could not be found in the secrets manager.")
 
 TELEGRAM_APP_URL = os.environ.get('TELEGRAM_APP_URL')
 if not TELEGRAM_APP_URL:
     raise ValueError("The TELEGRAM_APP_URL environment variable is not set.")
 
-print(f"TELEGRAM_APP_URL: {TELEGRAM_APP_URL}")
-print(f"TELEGRAM_TOKEN: {TELEGRAM_TOKEN[:5]}{'*' * (len(TELEGRAM_TOKEN) - 5)}")
-
-# Set webhook
-webhook_url = f'https://api.telegram.org/bot{TELEGRAM_TOKEN}/setWebhook'
-max_retries = 5
-backoff_factor = 2
-
-for attempt in range(max_retries):
-    response = requests.post(webhook_url, data={'url': TELEGRAM_APP_URL})
-    if response.status_code == 200:
-        print('Webhook set successfully')
-        break
-    elif response.status_code == 429:
-        retry_after = int(response.headers.get("Retry-After", backoff_factor))
-        print(f"Rate limited by Telegram API. Retrying after {retry_after} seconds...")
-        time.sleep(retry_after)
-    else:
-        print('Failed to set webhook', response.text)
-        break
-    backoff_factor *= 2
-else:
-    print('Max retries reached. Webhook not set.')
-    exit(1)
-
+# print(f"TELEGRAM_APP_URL: {TELEGRAM_APP_URL}")
+# print(f"TELEGRAM_TOKEN: {TELEGRAM_TOKEN[:5]}{'*' * (len(TELEGRAM_TOKEN) - 5)}")
 
 app = flask.Flask(__name__)
-
 
 dynamodb = boto3.resource('dynamodb', region_name=aws_region)
 table_name = os.environ.get('DYNAMODB_TABLE_NAME')
@@ -73,6 +51,10 @@ def webhook():
 
 @app.route(f'/results', methods=['POST'])
 def results():
+    if os.environ.get('TEST_MODE'):
+        # If TEST_MODE is set, return a mock response
+        return 'Test mode active. No actual results.', 200
+
     prediction_id = flask.request.args.get('predictionId')
     response = table.get_item(Key={'prediction_id': prediction_id})
     if 'Item' in response:
