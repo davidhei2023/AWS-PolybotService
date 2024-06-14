@@ -21,4 +21,4 @@ systemctl start docker
 groupadd docker
 usermod -aG docker $USER
 
-docker run -d --name polybot -p 8443:8443 -e aws_region=us-east-2 -e TELEGRAM_APP_URL=https://davidhei-polybot.int-devops.click -e POLYBOT_RESULTS_URL=https://davidhei-polybot.int-devops.click -e DYNAMODB_TABLE_NAME=davidhei-AWS-polybot-DynamoDB-table davidhei/aws-polybotservice:polybot-v0.2.0
+docker run -d --name yolo5 -e aws_region=us-east-2 davidhei/aws-polybotservice:yolo5-v0.0.1
