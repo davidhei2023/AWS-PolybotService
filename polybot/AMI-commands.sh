@@ -22,4 +22,4 @@ systemctl start docker
 groupadd docker
 usermod -aG docker $USER
 
-docker run --name polybot --restart always -p 8443:8443 -e aws_region=us-east-2 davidhei/aws-polybotservice:poybot-v0.2.2
+docker run -d --name polybot --restart always -p 8443:8443 -e aws_region=us-east-2 davidhei/aws-polybotservice:polybot-v0.3.1
