@@ -30,8 +30,12 @@ if not table_name:
     raise ValueError("The DYNAMODB_TABLE_NAME environment variable is not set.")
 table = dynamodb.Table(table_name)
 
-app = flask.Flask(__name__)
+sqs_client = boto3.client('sqs', region_name=aws_region)
+sqs_queue_url = os.environ.get('SQS_QUEUE_URL')
+if not sqs_queue_url:
+    raise ValueError("The SQS_QUEUE_URL environment variable is not set.")
 
+app = flask.Flask(__name__)
 
 # Flask routes
 @app.route('/', methods=['GET'])
@@ -87,7 +91,7 @@ def load_test():
 
 if __name__ == "__main__":
     try:
-        bot = ObjectDetectionBot(TELEGRAM_TOKEN, TELEGRAM_APP_URL)
+        bot = ObjectDetectionBot(TELEGRAM_TOKEN, TELEGRAM_APP_URL, sqs_queue_url, aws_region)
         app.run(host='0.0.0.0', port=8443)
     except Exception as e:
         print(f"Error starting Flask application: {str(e)}")

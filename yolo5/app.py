@@ -1,6 +1,6 @@
 import time
 from pathlib import Path
-from detect import run
+from detect import run  # Assuming this is your detection script
 import yaml
 from loguru import logger
 import os
@@ -11,7 +11,7 @@ import json
 images_bucket = os.environ.get('BUCKET_NAME', 'default-bucket')
 queue_url = os.environ.get('SQS_QUEUE_URL', 'default-sqs-url')
 dynamodb_table_name = os.environ.get('DYNAMODB_TABLE_NAME', 'default-dynamodb-table')
-polybot_results_url = os.environ.get('POLYBOT_RESULTS_URL', 'default-results-url')
+polybot_results_url = os.environ.get('POLYBOT_RESULTS_URL', 'http://polybot-service/results')  # ALB DNS name for Polybot service
 
 sqs_client = boto3.client('sqs', region_name='us-east-2')
 s3_client = boto3.client('s3', region_name='us-east-2')
@@ -60,7 +60,7 @@ def consume():
             logger.info(f'prediction: {prediction_id}/{original_img_path}. Download img completed')
 
             run(
-                weights='yolov5s.pt',
+                weights='yolov5s.pt',  # Your YOLO model weights
                 data=coco_yaml_path,
                 source=original_img_path,
                 project='static/data',
@@ -94,13 +94,14 @@ def consume():
                     'original_img_path': original_img_path,
                     'predicted_img_path': str(predicted_img_path),
                     'labels': labels,
-                    'time': time.time()
+                    'time': time.time(),
+                    'chat_id': chat_id
                 }
 
                 table.put_item(Item=prediction_summary)
                 logger.info(f'prediction: {prediction_id}. Stored prediction summary in DynamoDB')
 
-                response = requests.post(f'{polybot_results_url}/results', params={'predictionId': prediction_id})
+                response = requests.post(f'{polybot_results_url}', params={'predictionId': prediction_id})
                 if response.status_code == 200:
                     logger.info(f'prediction: {prediction_id}. Notified Polybot microservice successfully')
                 else:

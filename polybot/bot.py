@@ -1,9 +1,10 @@
+import json
+
 import telebot
 from loguru import logger
 import os
 import time
 from telebot.types import InputFile
-import requests
 import boto3
 from botocore.exceptions import NoCredentialsError
 
@@ -77,6 +78,11 @@ class Bot:
 
 
 class ObjectDetectionBot(Bot):
+    def __init__(self, token, telegram_chat_url, sqs_queue_url, aws_region):
+        super().__init__(token, telegram_chat_url)
+        self.sqs_client = boto3.client('sqs', region_name=aws_region)
+        self.sqs_queue_url = sqs_queue_url
+
     def handle_message(self, msg):
         logger.info(f'Incoming message: {msg}')
 
@@ -95,19 +101,14 @@ class ObjectDetectionBot(Bot):
 
                 logger.info(f"Photo uploaded to S3: {s3_url}")
 
-                yolo5_url = os.environ['YOLO5_URL']
-                response = requests.post(f"{yolo5_url}/predict?imgName={s3_file_name}")
+                # Instead of direct HTTP request, send a job to SQS
+                job_message = {
+                    'img_name': s3_file_name,
+                    'chat_id': msg['chat']['id']
+                }
 
-                if response.status_code == 200:
-                    result = response.json()
-                    self.send_text(msg['chat']['id'], f"Detection results: {result}")
-
-                    if 'predicted_img_path' in result:
-                        local_predicted_img_path = result['predicted_img_path']
-                        self.send_photo(msg['chat']['id'], local_predicted_img_path)
-                else:
-                    self.send_text(msg['chat']['id'], "Failed to get prediction from YOLO5 service.")
-                    logger.error(f"YOLO5 response error: {response.status_code}, {response.text}")
+                self.sqs_client.send_message(QueueUrl=self.sqs_queue_url, MessageBody=json.dumps(job_message))
+                self.send_text(msg['chat']['id'], "Your image has been received and is being processed.")
 
             except Exception as e:
                 logger.error(f"Error in handling message: {str(e)}")
