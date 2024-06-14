@@ -2,3 +2,5 @@ pyyaml
 loguru
 boto3
 requests
+torch
+ultralytics
