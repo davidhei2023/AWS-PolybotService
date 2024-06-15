@@ -12,13 +12,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout the repo code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Build and push image
         run: |
           cd yolo5
           
-          # TODO your implementation here....          
+          docker build -t yolo5-v1.0.0 .
+          docker tag yolo5-v1.0.0 davidhei/aws-polybotservice:yolo5-v1.0.0
+          docker push davidhei/aws-polybotservice:yolo5-v1.0.0
 
   Deploy:
     runs-on: ubuntu-latest
@@ -27,8 +29,8 @@ jobs:
 
     steps:
       - name: Checkout the repo code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
       - name: Deploy new version
-        run: |         
-          # TODO your implementation here....     
-     
+        run: |   
+          
+          docker run -p 80:80 --name yolo5 davidhei/aws-polybotservice:yolo5-v1.0.0  

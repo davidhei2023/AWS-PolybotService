@@ -12,13 +12,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout the repo code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Build and push image
         run: |
           cd polybot
           
-          # TODO your implementation here....          
+          docker build -t polybot-v1.0.0 .
+          docker tag  polybot-v1.0.0 davidhei/aws-polybotservice:polybot-v1.0.0
+          docker push davidhei/aws-polybotservice:polybot-v1.0.0
 
   Deploy:
     runs-on: ubuntu-latest
@@ -30,5 +32,6 @@ jobs:
         uses: actions/checkout@v2
       - name: Deploy new version
         run: |         
-          # TODO your implementation here....     
+          
+          docker run --name polybot --restart always -p 8443:8443 davidhei/aws-polybotservice:polybot-v1.0.0    
      
