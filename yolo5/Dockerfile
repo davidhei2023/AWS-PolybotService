@@ -8,7 +8,7 @@ RUN curl -L https://github.com/ultralytics/yolov5/releases/download/v6.1/yolov5s
 ENV S3_BUCKET_NAME="davidhei-aws-polybotservice-bucket"
 ENV SQS_QUEUE_URL="https://sqs.us-east-2.amazonaws.com/019273956931/davidhei-AWS-polybot-SQS"
 ENV DYNAMODB_TABLE_NAME="davidhei-AWS-polybot-DynamoDB-table"
-ENV POLYBOT_RESULTS_URL="https://davidhei-polybot.int-devops.click"
+ENV POLYBOT_RESULTS_URL="https://davidhei-polybot.int-devops.click/results"
 ENV AWS_REGION="us-east-2"
 
 EXPOSE 80

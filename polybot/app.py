@@ -37,6 +37,7 @@ if not sqs_queue_url:
 
 app = flask.Flask(__name__)
 
+
 # Flask routes
 @app.route('/', methods=['GET'])
 def index():
@@ -54,10 +55,17 @@ def webhook():
         return 'Error', 500
 
 
-@app.route(f'/results', methods=['POST'])
+@app.route('/results', methods=['POST'])
 def results():
     try:
+        # Extract predictionId from the request body or query parameter
         prediction_id = flask.request.args.get('predictionId')
+        if not prediction_id:
+            prediction_id = flask.request.json.get('predictionId')
+
+        if not prediction_id:
+            return 'predictionId is required', 400
+
         response = table.get_item(Key={'prediction_id': prediction_id})
 
         if 'Item' in response:
@@ -78,7 +86,7 @@ def results():
         return 'Error', 500
 
 
-@app.route(f'/loadTest/', methods=['POST'])
+@app.route('/loadTest/', methods=['POST'])
 def load_test():
     try:
         req = flask.request.get_json()

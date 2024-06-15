@@ -9,6 +9,7 @@ ENV POLYBOT_RESULTS_URL="https://davidhei-polybot.int-devops.click"
 ENV SQS_QUEUE_URL="https://sqs.us-east-2.amazonaws.com/019273956931/davidhei-AWS-polybot-SQS"
 ENV S3_BUCKET_NAME="davidhei-aws-polybotservice-bucket"
 ENV AWS_REGION="us-east-2"
+ENV POLYBOT_RESULTS_URL="https://davidhei-polybot.int-devops.click/results"
 
 EXPOSE 8443
 
