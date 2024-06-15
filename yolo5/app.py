@@ -19,6 +19,8 @@ sqs_client = boto3.client('sqs', region_name=AWS_REGION)
 s3_client = boto3.client('s3', region_name=AWS_REGION)
 dynamodb = boto3.resource('dynamodb', region_name=AWS_REGION)
 
+os.system('/print_build_info.sh')
+
 table = dynamodb.Table(DYNAMODB_TABLE_NAME)
 coco_yaml_path = 'data/coco128.yaml'
 names = ['person', 'bicycle', 'car', 'motorcycle', 'airplane', 'bus', 'train', 'truck', 'boat', 'traffic light', 
@@ -127,5 +129,6 @@ def consume():
 
 
 if __name__ == "__main__":
+    logger.info(f"Service started at {time.strftime('%Y-%m-%d %H:%M:%S')}")
     consume()
 

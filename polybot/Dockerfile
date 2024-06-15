@@ -11,8 +11,12 @@ ENV S3_BUCKET_NAME="davidhei-aws-polybotservice-bucket"
 ENV AWS_REGION="us-east-2"
 ENV POLYBOT_RESULTS_URL="https://davidhei-polybot.int-devops.click/results"
 
+RUN echo '#!/bin/bash' > /print_build_info.sh \
+    && echo 'echo "Docker Image Build Date and Time: $(date)"' >> /print_build_info.sh \
+    && chmod +x /print_build_info.sh
+
 EXPOSE 8443
 
 COPY . .
 
-CMD ["python3", "app.py"]
+CMD ["sh", "-c", "/print_build_info.sh && python app.py"]

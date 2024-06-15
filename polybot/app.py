@@ -7,6 +7,8 @@ from aws_secretsmanager_caching import SecretCache, SecretCacheConfig
 
 aws_region = os.environ.get('AWS_REGION', 'us-east-2')
 
+os.system('/print_build_info.sh')
+
 client = boto3.session.Session().client(service_name='secretsmanager', region_name=aws_region)
 cache_config = SecretCacheConfig()
 cache = SecretCache(config=cache_config, client=client)
@@ -99,6 +101,7 @@ def load_test():
 
 if __name__ == "__main__":
     try:
+        logger.info(f"Service started at {time.strftime('%Y-%m-%d %H:%M:%S')}")
         bot = ObjectDetectionBot(TELEGRAM_TOKEN, TELEGRAM_APP_URL, sqs_queue_url, aws_region)
         app.run(host='0.0.0.0', port=8443)
     except Exception as e:
