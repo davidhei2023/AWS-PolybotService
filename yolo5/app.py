@@ -10,25 +10,25 @@ from loguru import logger
 from detect import run
 
 # Get environment variables
-aws_region = os.getenv('AWS_REGION')
-s3_bucket_name = os.getenv('S3_BUCKET_NAME')
-sqs_queue_url = os.getenv('SQS_QUEUE_URL')
-dynamodb_table_name = os.getenv('DYNAMODB_TABLE_NAME')
-polybot_results_url = os.getenv('POLYBOT_RESULTS_URL')
+AWS_REGION = os.getenv('AWS_REGION')
+S3_BUCKET_NAME = os.getenv('S3_BUCKET_NAME')
+SQS_QUEUE_URL = os.getenv('SQS_QUEUE_URL')
+DYNAMODB_TABLE_NAME = os.getenv('DYNAMODB_TABLE_NAME')
+POLYBOT_RESULTS_URL = os.getenv('POLYBOT_RESULTS_URL')
 
 # Initialize AWS clients
-sqs_client = boto3.client('sqs', region_name=aws_region)
-s3_client = boto3.client('s3', region_name=aws_region)
-dynamodb = boto3.resource('dynamodb', region_name=aws_region)
+sqs_client = boto3.client('sqs', region_name=AWS_REGION)
+s3_client = boto3.client('s3', region_name=AWS_REGION)
+dynamodb = boto3.resource('dynamodb', region_name=AWS_REGION)
 
-table = dynamodb.Table(dynamodb_table_name)
+table = dynamodb.Table(DYNAMODB_TABLE_NAME)
 coco_yaml_path = 'data/coco128.yaml'
 names = ['person', 'bicycle', 'car', 'motorcycle', 'airplane', 'bus', 'train', 'truck', 'boat', 'traffic light', 'fire hydrant', 'stop sign', 'parking meter', 'bench', 'bird', 'cat', 'dog', 'horse', 'sheep', 'cow', 'elephant', 'bear', 'zebra', 'giraffe', 'backpack', 'umbrella', 'handbag', 'tie', 'suitcase', 'frisbee', 'skis', 'snowboard', 'sports ball', 'kite', 'baseball bat', 'baseball glove', 'skateboard', 'surfboard', 'tennis racket', 'bottle', 'wine glass', 'cup', 'fork', 'knife', 'spoon', 'bowl', 'banana', 'apple', 'sandwich', 'orange', 'broccoli', 'carrot', 'hot dog', 'pizza', 'donut', 'cake', 'chair', 'couch', 'potted plant', 'bed', 'dining table', 'toilet', 'tv', 'laptop', 'mouse', 'remote', 'keyboard', 'cell phone', 'microwave', 'oven', 'toaster', 'sink', 'refrigerator', 'book', 'clock', 'vase', 'scissors', 'teddy bear', 'hair drier', 'toothbrush']
 
 
 def consume():
     while True:
-        response = sqs_client.receive_message(QueueUrl=sqs_queue_url, MaxNumberOfMessages=1, WaitTimeSeconds=5)
+        response = sqs_client.receive_message(QueueUrl=SQS_QUEUE_URL, MaxNumberOfMessages=1, WaitTimeSeconds=5)
 
         if 'Messages' in response:
             message = json.loads(response['Messages'][0]['Body'])
@@ -42,7 +42,7 @@ def consume():
             original_img_path = f'/tmp/{img_name}'
 
             try:
-                s3_client.download_file(s3_bucket_name, img_name, original_img_path)
+                s3_client.download_file(S3_BUCKET_NAME, img_name, original_img_path)
                 logger.info(f'prediction: {prediction_id}/{original_img_path}. Download img completed')
             except boto3.exceptions.S3UploadFailedError as e:
                 logger.error(f'Failed to download image from S3: {str(e)}')
@@ -67,7 +67,7 @@ def consume():
 
             predicted_img_path = Path(f'static/data/{prediction_id}/{img_name}')
 
-            s3_client.upload_file(str(predicted_img_path), s3_bucket_name, f'predicted/{img_name}')
+            s3_client.upload_file(str(predicted_img_path), S3_BUCKET_NAME, f'predicted/{img_name}')
             logger.info(f'prediction: {prediction_id}. Uploaded predicted image to S3')
 
             pred_summary_path = Path(f'static/data/{prediction_id}/labels/{img_name.split(".")[0]}.txt')
@@ -106,13 +106,13 @@ def consume():
                 table.put_item(Item=prediction_summary)
                 logger.info(f'prediction: {prediction_id}. Stored prediction summary in DynamoDB')
 
-                response = requests.post(f'{polybot_results_url}', params={'predictionId': prediction_id})
+                response = requests.post(f'{POLYBOT_RESULTS_URL}', params={'predictionId': prediction_id})
                 if response.status_code == 200:
                     logger.info(f'prediction: {prediction_id}. Notified Polybot microservice successfully')
                 else:
                     logger.error(f'prediction: {prediction_id}. Failed to notify Polybot microservice')
 
-            sqs_client.delete_message(QueueUrl=sqs_queue_url, ReceiptHandle=receipt_handle)
+            sqs_client.delete_message(QueueUrl=SQS_QUEUE_URL, ReceiptHandle=receipt_handle)
             logger.info(f'prediction: {prediction_id}. Deleted message from SQS queue')
 
 
