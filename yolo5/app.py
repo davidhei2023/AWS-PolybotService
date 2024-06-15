@@ -131,4 +131,3 @@ def consume():
 if __name__ == "__main__":
     logger.info(f"Service started at {time.strftime('%Y-%m-%d %H:%M:%S')}")
     consume()
-

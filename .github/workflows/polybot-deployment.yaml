@@ -30,9 +30,16 @@ jobs:
 
       - name: Deploy new version
         run: |
-          ssh -o StrictHostKeyChecking=no -i /path/to/your/private/key.pem ${{ secrets.SSH_USER }}@${{ secrets.LOAD_BALANCER_DNS }} << 'EOF'
-          docker pull ${{ secrets.DOCKER_HUB_USERNAME }}/polybot:latest
-          docker stop polybot_container || true
-          docker rm polybot_container || true
-          docker run -d --restart always --name polybot_container -p 8443:8443 ${{ secrets.DOCKER_HUB_USERNAME }}/polybot:latest
-          EOF
+          POLYBOT_INSTANCES=$(aws elbv2 describe-target-health --target-group-arn ${{ secrets.POLYBOT_TARGET_GROUP_ARN }} --query 'TargetHealthDescriptions[*].Target.Id' --output text --region ${{ secrets.AWS_REGION }})
+          
+          for instance in $POLYBOT_INSTANCES; do
+            PUBLIC_IP=$(aws ec2 describe-instances --instance-ids $instance --query 'Reservations[0].Instances[0].PublicIpAddress' --output text --region ${{ secrets.AWS_REGION }})
+            ssh -o StrictHostKeyChecking=no -i /path/to/your/private/key.pem ec2-user@$PUBLIC_IP << 'EOF'
+              sudo docker pull ${{ secrets.DOCKER_HUB_USERNAME }}/polybot:latest
+              sudo docker stop polybot_container || true
+              sudo docker rm polybot_container || true
+              sudo docker run -d --restart always --name polybot_container -p 8443:8443 ${{ secrets.DOCKER_HUB_USERNAME }}/polybot:latest
+              EOF
+          done
+        env:
+          AWS_REGION: ${{ secrets.AWS_REGION }}
