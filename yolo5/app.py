@@ -8,18 +8,26 @@ from pathlib import Path
 from decimal import Decimal
 from loguru import logger
 from detect import run
+from telegram import Bot
+from aws_secretsmanager_caching import SecretCache, SecretCacheConfig
 
-AWS_REGION = os.getenv('AWS_REGION')
 S3_BUCKET_NAME = os.getenv('S3_BUCKET_NAME')
 SQS_QUEUE_URL = os.getenv('SQS_QUEUE_URL')
 DYNAMODB_TABLE_NAME = os.getenv('DYNAMODB_TABLE_NAME')
 POLYBOT_RESULTS_URL = os.getenv('POLYBOT_RESULTS_URL')
 
+AWS_REGION = os.environ.get('AWS_REGION', 'us-east-2')
+client = boto3.session.Session().client(service_name='secretsmanager', region_name=AWS_REGION)
+cache_config = SecretCacheConfig()
+cache = SecretCache(config=cache_config, client=client)
+
+TELEGRAM_TOKEN_SECRET = cache.get_secret_string('davidhei-telegram-token')
+TELEGRAM_TOKEN = json.loads(TELEGRAM_TOKEN_SECRET).get("TELEGRAM_TOKEN")
+telegram_bot = Bot(token=TELEGRAM_TOKEN)
+
 sqs_client = boto3.client('sqs', region_name=AWS_REGION)
 s3_client = boto3.client('s3', region_name=AWS_REGION)
 dynamodb = boto3.resource('dynamodb', region_name=AWS_REGION)
-
-os.system('/print_build_info.sh')
 
 table = dynamodb.Table(DYNAMODB_TABLE_NAME)
 coco_yaml_path = 'data/coco128.yaml'
@@ -123,6 +131,14 @@ def consume():
                     if response is not None:
                         logger.error(f'Response status code: {response.status_code}')
                         logger.error(f'Response text: {response.text}')
+
+                try:
+                    with open(predicted_img_path, 'rb') as img_file:
+                        telegram_bot.send_photo(chat_id=chat_id, photo=img_file)
+                    logger.info(f'Prediction: {prediction_id}. Sent predicted image to user on Telegram')
+                except Exception as e:
+                    logger.error(
+                        f'Prediction: {prediction_id}. Failed to send predicted image to user on Telegram. Error: {str(e)}')
 
             sqs_client.delete_message(QueueUrl=SQS_QUEUE_URL, ReceiptHandle=receipt_handle)
             logger.info(f'prediction: {prediction_id}. Deleted message from SQS queue')

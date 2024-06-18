@@ -9,8 +9,6 @@ from aws_secretsmanager_caching import SecretCache, SecretCacheConfig
 
 aws_region = os.environ.get('AWS_REGION', 'us-east-2')
 
-os.system('/print_build_info.sh')
-
 client = boto3.session.Session().client(service_name='secretsmanager', region_name=aws_region)
 cache_config = SecretCacheConfig()
 cache = SecretCache(config=cache_config, client=client)

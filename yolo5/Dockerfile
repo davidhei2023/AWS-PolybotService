@@ -11,12 +11,8 @@ ENV DYNAMODB_TABLE_NAME="davidhei-AWS-polybot-DynamoDB-table"
 ENV POLYBOT_RESULTS_URL="https://davidhei-polybot.int-devops.click/results"
 ENV AWS_REGION="us-east-2"
 
-RUN echo '#!/bin/bash' > /print_build_info.sh \
-    && echo 'echo "Docker Image Build Date and Time: $(date)"' >> /print_build_info.sh \
-    && chmod +x /print_build_info.sh
-
 EXPOSE 80
 
 COPY . .
 
-CMD ["sh", "-c", "/print_build_info.sh && python app.py"]
+CMD ["python", "app.py"]

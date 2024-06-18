@@ -21,4 +21,4 @@ systemctl start docker
 groupadd docker
 usermod -aG docker $USER
 
-docker run -d -p 80:80 --name yolo5 davidhei/aws-polybotservice:yolo5-v0.4.9
+docker run -d -p 80:80 --name yolo5 davidhei/aws-polybotservice:yolo5-v1.0.0
