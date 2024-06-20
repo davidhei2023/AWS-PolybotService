@@ -1,9 +1,7 @@
-from datetime import time
 import flask
 import os
 import json
 import boto3
-from loguru import logger
 from bot import ObjectDetectionBot
 from aws_secretsmanager_caching import SecretCache, SecretCacheConfig
 
@@ -12,6 +10,8 @@ aws_region = os.environ.get('AWS_REGION', 'us-east-2')
 client = boto3.session.Session().client(service_name='secretsmanager', region_name=aws_region)
 cache_config = SecretCacheConfig()
 cache = SecretCache(config=cache_config, client=client)
+
+S3_PREDICTED_URL = os.getenv('S3_PREDICTED_URL')
 
 try:
     TELEGRAM_TOKEN_SECRET = cache.get_secret_string('davidhei-telegram-token')
@@ -60,7 +60,6 @@ def webhook():
 @app.route('/results', methods=['POST'])
 def results():
     try:
-        # Extract predictionId from the request body or query parameter
         prediction_id = flask.request.args.get('predictionId')
         if not prediction_id:
             prediction_id = flask.request.json.get('predictionId')
@@ -80,6 +79,12 @@ def results():
                 text_results += f"- {label['class']} at ({label['cx']:.2f}, {label['cy']:.2f}) with size ({label['width']:.2f}, {label['height']:.2f})\n"
 
             bot.send_text(chat_id, text_results)
+
+            file_name = os.path.basename(item['original_img_path'])
+            s3_full_url = f"{S3_PREDICTED_URL}{file_name}"
+
+            bot.send_text(chat_id, "You can download the predicted image here:")
+            bot.send_text(chat_id, s3_full_url)
             return 'Ok'
         else:
             return 'No results found', 404
@@ -101,7 +106,6 @@ def load_test():
 
 if __name__ == "__main__":
     try:
-        logger.info(f"Service started at {time.strftime('%Y-%m-%d %H:%M:%S')}")
         bot = ObjectDetectionBot(TELEGRAM_TOKEN, TELEGRAM_APP_URL, sqs_queue_url, aws_region)
         app.run(host='0.0.0.0', port=8443)
     except Exception as e:

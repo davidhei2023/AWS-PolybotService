@@ -1,5 +1,4 @@
 import json
-
 import telebot
 from loguru import logger
 import os
@@ -7,6 +6,7 @@ import time
 from telebot.types import InputFile
 import boto3
 from botocore.exceptions import NoCredentialsError
+from telegram.constants import ParseMode
 
 
 class Bot:
@@ -32,6 +32,9 @@ class Bot:
 
     def send_text_with_quote(self, chat_id, text, quoted_msg_id):
         self.telegram_bot_client.send_message(chat_id, text, reply_to_message_id=quoted_msg_id)
+
+    def send_message(self, chat_id, text, parse_mode=None):
+        self.bot.send_message(chat_id, text, parse_mode=ParseMode.HTML)
 
     def is_current_msg_photo(self, msg):
         return 'photo' in msg

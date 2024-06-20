@@ -10,6 +10,7 @@ ENV SQS_QUEUE_URL="https://sqs.us-east-2.amazonaws.com/019273956931/davidhei-AWS
 ENV S3_BUCKET_NAME="davidhei-aws-polybotservice-bucket"
 ENV AWS_REGION="us-east-2"
 ENV POLYBOT_RESULTS_URL="https://davidhei-polybot.int-devops.click/results"
+ENV S3_PREDICTED_URL="https://davidhei-aws-polybotservice-bucket.s3.us-east-2.amazonaws.com/predicted/"
 
 EXPOSE 8443
 
