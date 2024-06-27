@@ -35,6 +35,7 @@ jobs:
 
       - name: Update Launch Template and Refresh ASG
         run: |
-          aws ec2 create-launch-template-version --launch-template-id ${{ secrets.LAUNCH_TEMPLATE_ID }} --source-version ${{ secrets.LAUNCH_TEMPLATE_VERSION }} --launch-template-data '{"UserData":"#!/bin/bash\nsudo docker pull ${{ secrets.DOCKER_HUB_USERNAME }}/yolo5:latest\nsudo docker stop yolo5_container || true\nsudo docker rm yolo5_container || true\nsudo docker run -d --name yolo5_container -p 8443:8443 ${{ secrets.DOCKER_HUB_USERNAME }}/yolo5:latest"}'
+          USER_DATA=$(echo -n '#!/bin/bash\nsudo docker pull ${{ secrets.DOCKER_HUB_USERNAME }}/yolo5:latest\nsudo docker stop yolo5_container || true\nsudo docker rm yolo5_container || true\nsudo docker run -d --name yolo5_container -p 8443:8443 ${{ secrets.DOCKER_HUB_USERNAME }}/yolo5:latest' | base64)
+          aws ec2 create-launch-template-version --launch-template-id ${{ secrets.LAUNCH_TEMPLATE_ID }} --source-version ${{ secrets.LAUNCH_TEMPLATE_VERSION }} --launch-template-data "{\"UserData\":\"$USER_DATA\"}"
           aws ec2 modify-launch-template --launch-template-id ${{ secrets.LAUNCH_TEMPLATE_ID }} --default-version $(aws ec2 describe-launch-template-versions --launch-template-id ${{ secrets.LAUNCH_TEMPLATE_ID }} --query "LaunchTemplateVersions[-1].VersionNumber" --output text)
           aws autoscaling start-instance-refresh --auto-scaling-group-name ${{ secrets.ASG_NAME }}
