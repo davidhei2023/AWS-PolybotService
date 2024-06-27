@@ -39,5 +39,5 @@ jobs:
               sudo docker stop polybot_container || true
               sudo docker rm polybot_container || true
               sudo docker run -d --restart always --name polybot_container -p 8443:8443 ${{ secrets.DOCKER_HUB_USERNAME }}/polybot:latest
-            EOF
+              EOF
           done
