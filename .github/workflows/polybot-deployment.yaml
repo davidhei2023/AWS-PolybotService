@@ -34,7 +34,7 @@ jobs:
           
           for instance in $POLYBOT_INSTANCES; do
             PUBLIC_IP=$(aws ec2 describe-instances --instance-ids $instance --query 'Reservations[0].Instances[0].PublicIpAddress' --output text --region ${{ secrets.AWS_REGION }})
-            ssh -o StrictHostKeyChecking=no -i ${{ secrets.SSH_PRIVATE_KEY }} ec2-user@$PUBLIC_IP << 'EOF'
+            ssh -o StrictHostKeyChecking=no -i ${{ secrets.SSH_PRIVATE_KEY }} ec2-user@$PUBLIC_IP << EOF
               sudo docker pull ${{ secrets.DOCKER_HUB_USERNAME }}/polybot:latest
               sudo docker stop polybot_container || true
               sudo docker rm polybot_container || true
