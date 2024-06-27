@@ -24,3 +24,4 @@ docker stop polybot || true
 docker rm polybot || true
 
 docker run -d --name polybot --restart always -p 8443:8443 davidhei/polybot:latest
+
