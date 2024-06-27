@@ -23,3 +23,4 @@ groupadd docker
 usermod -aG docker $USER
 
 docker run -d --name polybot --restart always -p 8443:8443 davidhei/aws-polybotservice:polybot-v1.3.11
+
