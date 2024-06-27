@@ -25,8 +25,12 @@ jobs:
     runs-on: ubuntu-latest
     needs: Build
     steps:
-      - name: Checkout the repo code
-        uses: actions/checkout@v2
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
 
       - name: Deploy new version
         run: |
@@ -34,12 +38,12 @@ jobs:
           
           for instance in $POLYBOT_INSTANCES; do
             PUBLIC_IP=$(aws ec2 describe-instances --instance-ids $instance --query 'Reservations[0].Instances[0].PublicIpAddress' --output text --region ${{ secrets.AWS_REGION }})
-            ssh -o StrictHostKeyChecking=no -i /path/to/your/private/key.pem ec2-user@$PUBLIC_IP << 'EOF'
+            ssh -o StrictHostKeyChecking=no -i ${{ secrets.SSH_PRIVATE_KEY }} ec2-user@$PUBLIC_IP << 'EOF'
               sudo docker pull ${{ secrets.DOCKER_HUB_USERNAME }}/polybot:latest
               sudo docker stop polybot_container || true
               sudo docker rm polybot_container || true
               sudo docker run -d --restart always --name polybot_container -p 8443:8443 ${{ secrets.DOCKER_HUB_USERNAME }}/polybot:latest
-              EOF
+            EOF
           done
         env:
           AWS_REGION: ${{ secrets.AWS_REGION }}
