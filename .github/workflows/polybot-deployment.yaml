@@ -8,23 +8,19 @@ on:
       - main
 
 jobs:
-  Build:
+  Build-and-Deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout the repo code
+      - name: Checkout the repository code
         uses: actions/checkout@v2
 
-      - name: Build and push image
+      - name: Build and push Polybot Docker image
         run: |
           cd polybot
           docker build -t ${{ secrets.DOCKER_HUB_USERNAME }}/polybot:latest .
-          echo ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }} | docker login -u ${{ secrets.DOCKER_HUB_USERNAME }} --password-stdin
+          echo "${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}" | docker login -u ${{ secrets.DOCKER_HUB_USERNAME }} --password-stdin
           docker push ${{ secrets.DOCKER_HUB_USERNAME }}/polybot:latest
 
-  Deploy:
-    runs-on: ubuntu-latest
-    needs: Build
-    steps:
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
@@ -32,7 +28,7 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
 
-      - name: Deploy new version
+      - name: Deploy Polybot to instances
         run: |
           POLYBOT_INSTANCES=$(aws elbv2 describe-target-health --target-group-arn ${{ secrets.POLYBOT_TARGET_GROUP_ARN }} --query 'TargetHealthDescriptions[*].Target.Id' --output text --region ${{ secrets.AWS_REGION }})
           
@@ -45,5 +41,3 @@ jobs:
               sudo docker run -d --restart always --name polybot_container -p 8443:8443 ${{ secrets.DOCKER_HUB_USERNAME }}/polybot:latest
             EOF
           done
-        env:
-          AWS_REGION: ${{ secrets.AWS_REGION }}
