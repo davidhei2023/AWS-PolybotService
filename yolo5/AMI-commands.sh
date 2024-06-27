@@ -24,3 +24,4 @@ docker stop yolo5 || true
 docker rm yolo5 || true
 
 docker run -d --name yolo5 --restart always -p 80:80 davidhei/yolo5:latest
+
