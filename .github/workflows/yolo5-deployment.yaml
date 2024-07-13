@@ -1,44 +1,44 @@
-name: Yolo5 Microservice Deployment
-
-on:
-  push:
-    paths:
-      - 'yolo5/**'
-    branches:
-      - main
-
-jobs:
-  Build:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout the repo code
-        uses: actions/checkout@v2
-
-      - name: Build and push image
-        run: |
-          cd yolo5
-          docker build -t ${{ secrets.DOCKER_HUB_USERNAME }}/yolo5:latest .
-          echo ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }} | docker login -u ${{ secrets.DOCKER_HUB_USERNAME }} --password-stdin
-          docker push ${{ secrets.DOCKER_HUB_USERNAME }}/yolo5:latest
-
-  Deploy:
-    runs-on: ubuntu-latest
-    needs: Build
-
-    steps:
-      - name: Checkout the repo code
-        uses: actions/checkout@v2
-
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v1
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_REGION }}
-
-      - name: Update Launch Template and Refresh ASG
-        run: |
-          USER_DATA=$(base64 yolo5/AMI-commands.sh | tr -d '\n')
-          aws ec2 create-launch-template-version --launch-template-id ${{ secrets.LAUNCH_TEMPLATE_ID }} --source-version ${{ secrets.LAUNCH_TEMPLATE_VERSION }} --launch-template-data "{\"UserData\":\"$USER_DATA\"}"
-          aws ec2 modify-launch-template --launch-template-id ${{ secrets.LAUNCH_TEMPLATE_ID }} --default-version $(aws ec2 describe-launch-template-versions --launch-template-id ${{ secrets.LAUNCH_TEMPLATE_ID }} --query "LaunchTemplateVersions[-1].VersionNumber" --output text)
-          aws autoscaling start-instance-refresh --auto-scaling-group-name ${{ secrets.ASG_NAME }}
+#name: Yolo5 Microservice Deployment
+#
+#on:
+#  push:
+#    paths:
+#      - 'yolo5/**'
+#    branches:
+#      - main
+#
+#jobs:
+#  Build:
+#    runs-on: ubuntu-latest
+#    steps:
+#      - name: Checkout the repo code
+#        uses: actions/checkout@v2
+#
+#      - name: Build and push image
+#        run: |
+#          cd yolo5
+#          docker build -t ${{ secrets.DOCKER_HUB_USERNAME }}/yolo5:latest .
+#          echo ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }} | docker login -u ${{ secrets.DOCKER_HUB_USERNAME }} --password-stdin
+#          docker push ${{ secrets.DOCKER_HUB_USERNAME }}/yolo5:latest
+#
+#  Deploy:
+#    runs-on: ubuntu-latest
+#    needs: Build
+#
+#    steps:
+#      - name: Checkout the repo code
+#        uses: actions/checkout@v2
+#
+#      - name: Configure AWS credentials
+#        uses: aws-actions/configure-aws-credentials@v1
+#        with:
+#          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+#          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+#          aws-region: ${{ secrets.AWS_REGION }}
+#
+#      - name: Update Launch Template and Refresh ASG
+#        run: |
+#          USER_DATA=$(base64 yolo5/AMI-commands.sh | tr -d '\n')
+#          aws ec2 create-launch-template-version --launch-template-id ${{ secrets.LAUNCH_TEMPLATE_ID }} --source-version ${{ secrets.LAUNCH_TEMPLATE_VERSION }} --launch-template-data "{\"UserData\":\"$USER_DATA\"}"
+#          aws ec2 modify-launch-template --launch-template-id ${{ secrets.LAUNCH_TEMPLATE_ID }} --default-version $(aws ec2 describe-launch-template-versions --launch-template-id ${{ secrets.LAUNCH_TEMPLATE_ID }} --query "LaunchTemplateVersions[-1].VersionNumber" --output text)
+#          aws autoscaling start-instance-refresh --auto-scaling-group-name ${{ secrets.ASG_NAME }}
